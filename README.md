@@ -5,6 +5,7 @@ Plugin for redmine which allows pasting image data from the clipboard directly i
 ## Features
 
 * Paste images from the clipboard
+* Drag and drop image files directly into the input element
 * Added to ticket as an attachment
 * Added into the comment text field using Redmine's markup language
 
@@ -37,7 +38,9 @@ Further information about plugin installation can be found at: http://www.redmin
 The latest version of this plugin is only tested with Redmine 2.3.x.
 
 Browser compatibility will be an issue since it is making use of the FileAPI which is still a working draft at time of writing and each browser has it's own implementation of this.
-This is developed with Webkit based browsers in mind, however support of Firefox and other browsers is in mind for future improvements.
+
+Paste is only supported by WebKit based browsers.
+Drag and drop should be supported by all modern browsers, tested with Chrome, Firefox and IE.
 
 ## License
 

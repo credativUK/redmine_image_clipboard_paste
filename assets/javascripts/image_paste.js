@@ -1,5 +1,59 @@
 jQuery.event.props.push('clipboardData');
+
+function pasteImageName(e, name) {
+    var text = ' !' + name + '! '
+    var scrollPos = e.scrollTop;
+    var method = ((e.selectionStart || e.selectionStart == '0') ? 1 : (document.selection ? 2 : false ) );
+    if (method == 2) { 
+        e.focus();
+        var range = document.selection.createRange();
+        range.moveStart ('character', -e.value.length);
+        strPos = range.text.length;
+    }
+    else if (method == 1) strPos = e.selectionStart;
+
+    var front = (e.value).substring(0,strPos);  
+    var back = (e.value).substring(strPos,e.value.length); 
+    e.value=front+text+back;
+    strPos = strPos + text.length;
+    if (method == 2) { 
+        e.focus();
+        var range = document.selection.createRange();
+        range.moveStart ('character', -e.value.length);
+        range.moveStart ('character', strPos);
+        range.moveEnd ('character', 0);
+        range.select();
+    }
+    else if (method == 1) {
+        e.selectionStart = strPos;
+        e.selectionEnd = strPos;
+        e.focus();
+    }
+    e.scrollTop = scrollPos;
+}
+
 $( document ).ready(function() {
+    $('.wiki-edit').each(function(){
+            this.addEventListener('drop', function (e) {
+                for (var file = 0; file<e.dataTransfer.files.length; file++)
+                {
+                    if (e.dataTransfer.files[file].type.indexOf('image/') != -1)
+                    {
+                        var timestamp = Math.round(+new Date()/1000);
+                        var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name;
+                        var blob = e.dataTransfer.files[file].slice();
+                        blob.name = name;
+                        uploadAndAttachFiles([blob], $('input:file.file_selector'));
+                        pasteImageName(this, name);
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                        break;
+                    }
+                }
+            });
+        });
+
     $('.wiki-edit').bind('paste', function (e) {
         var clipboardData;
         if (document.attachEvent) clipboardData = window.clipboardData;
@@ -41,36 +95,10 @@ $( document ).ready(function() {
                 uploadAndAttachFiles([blob], fileinput);
 
                 /* Inset text into input */
-                var text = '!' + name + '!'
-                var scrollPos = this.scrollTop;
-                var method = ((this.selectionStart || this.selectionStart == '0') ? 1 : (document.selection ? 2 : false ) );
-                if (method == 2) { 
-                    this.focus();
-                    var range = document.selection.createRange();
-                    range.moveStart ('character', -this.value.length);
-                    strPos = range.text.length;
-                }
-                else if (method == 1) strPos = this.selectionStart;
+                pasteImageName(this, name);
 
-                var front = (this.value).substring(0,strPos);  
-                var back = (this.value).substring(strPos,this.value.length); 
-                this.value=front+text+back;
-                strPos = strPos + text.length;
-                if (method == 2) { 
-                    this.focus();
-                    var range = document.selection.createRange();
-                    range.moveStart ('character', -this.value.length);
-                    range.moveStart ('character', strPos);
-                    range.moveEnd ('character', 0);
-                    range.select();
-                }
-                else if (method == 1) {
-                    this.selectionStart = strPos;
-                    this.selectionEnd = strPos;
-                    this.focus();
-                }
-                this.scrollTop = scrollPos;
-
+                e.preventDefault();
+                e.stopPropagation();
                 break;
             }
         }
