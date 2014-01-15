@@ -32,7 +32,7 @@ function pasteImageName(e, name) {
     e.scrollTop = scrollPos;
 }
 
-$( document ).ready(function() {
+function preparePasteEvents() {
     $('.wiki-edit').each(function(){
             this.addEventListener('drop', function (e) {
                 for (var file = 0; file<e.dataTransfer.files.length; file++)
@@ -103,5 +103,8 @@ $( document ).ready(function() {
             }
         }
     });
+}
+$( document ).ready(function() {
+    preparePasteEvents()
 });
 
