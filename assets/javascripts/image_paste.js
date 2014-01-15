@@ -1,7 +1,7 @@
 jQuery.event.props.push('clipboardData');
 
 function pasteImageName(e, name) {
-    var text = ' !' + name + '! '
+    var text = '!' + name + '! '
     var scrollPos = e.scrollTop;
     var method = ((e.selectionStart || e.selectionStart == '0') ? 1 : (document.selection ? 2 : false ) );
     if (method == 2) { 
@@ -14,7 +14,11 @@ function pasteImageName(e, name) {
 
     var front = (e.value).substring(0,strPos);  
     var back = (e.value).substring(strPos,e.value.length); 
-    e.value=front+text+back;
+    if (front.length == 0 || front.slice(-1) == '\n') {
+        e.value=front+text+back;
+    } else {
+        e.value=front+' '+text+back;
+    }
     strPos = strPos + text.length;
     if (method == 2) { 
         e.focus();
