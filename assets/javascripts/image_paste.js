@@ -107,6 +107,35 @@ function preparePasteEvents() {
             }
         }
     });
+
+    uploadBlob = function (blob, uploadUrl, attachmentId, options) {
+        var actualOptions = $.extend({
+            loadstartEventHandler: $.noop,
+            progressEventHandler: $.noop
+        }, options);
+
+        uploadUrl = uploadUrl + '?attachment_id=' + attachmentId;
+        if (blob instanceof window.File || blob.name) {
+            uploadUrl += '&filename=' + encodeURIComponent(blob.name);
+        }
+
+        return $.ajax(uploadUrl, {
+            type: 'POST',
+            contentType: 'application/octet-stream',
+            beforeSend: function(jqXhr) {
+            jqXhr.setRequestHeader('Accept', 'application/js');
+            },
+            xhr: function() {
+            var xhr = $.ajaxSettings.xhr();
+            xhr.upload.onloadstart = actualOptions.loadstartEventHandler;
+            xhr.upload.onprogress = actualOptions.progressEventHandler;
+            return xhr;
+            },
+            data: blob,
+            cache: false,
+            processData: false
+        });
+    }
 }
 $( document ).ready(function() {
     preparePasteEvents()
