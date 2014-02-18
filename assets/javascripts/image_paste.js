@@ -44,7 +44,7 @@ function preparePasteEvents() {
                     if (e.dataTransfer.files[file].type.indexOf('image/') != -1)
                     {
                         var timestamp = Math.round(+new Date()/1000);
-                        var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name.replace(/[!"#%&\'()*:<=>?\[\\\]|]/g, '_');
+                        var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name.replace(/[ !"#%&\'()*:<=>?\[\\\]|]/g, '_');
                         var blob = e.dataTransfer.files[file].slice();
                         blob.name = name;
                         uploadAndAttachFiles([blob], $('input:file.file_selector'));
