@@ -1,7 +1,7 @@
 jQuery.event.props.push('clipboardData');
 
 function pasteImageName(e, name) {
-    var text = '!' + name.replace(' ', '') + '! ';
+    var text = '!' + name + '! ';
     var scrollPos = e.scrollTop;
     var method = ((e.selectionStart || e.selectionStart == '0') ? 1 : (document.selection ? 2 : false ) );
     if (method == 2) { 
@@ -44,7 +44,7 @@ function preparePasteEvents() {
                     if (e.dataTransfer.files[file].type.indexOf('image/') != -1)
                     {
                         var timestamp = Math.round(+new Date()/1000);
-                        var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name;
+                        var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name.replace(/[!"#%&\'()*:<=>?\[\\\]|]/g, '_');
                         var blob = e.dataTransfer.files[file].slice();
                         blob.name = name;
                         uploadAndAttachFiles([blob], $('input:file.file_selector'));
