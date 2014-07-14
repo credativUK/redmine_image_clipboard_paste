@@ -36,6 +36,105 @@ function pasteImageName(e, name) {
     e.scrollTop = scrollPos;
 }
 
+/**
+* Some browser doesn't support cliboardData.items, so this function recreates a simpler version of it
+* by getting the blob linked to the image.
+* Currently only works when copying an image from a webpage
+*/
+function getDataItems(clipboardData, editElement, event) {
+    clipboardData.items = [];
+    for(var i = 0; i < clipboardData.types.length; i++) {
+        console.log(clipboardData.types[i]);
+        var data = clipboardData.getData(clipboardData.types[i]);
+        if(clipboardData.types[i] == "text/html") {
+            var nodes = $(data);
+            for(var j = 0; j < nodes.length; j++) {
+                var item = {};
+                var node = nodes[j];
+                if(node.tagName == 'IMG') {
+                    var xhr = new XMLHttpRequest();
+                    xhr.addEventListener('load', function(){
+                        if (xhr.status == 200){
+                            //Do something with xhr.response (not responseText), which should be a Blob
+                            item.getAsFile = function() {
+                                return xhr.response;
+                            }
+                            item.type = xhr.response.type;
+                            clipboardData.items.push(item);
+                            processClipboardItems(clipboardData, editElement, event);
+                        }
+                    });
+                    xhr.open('GET', node.src);
+                    xhr.responseType = 'blob';
+                    xhr.send(null);
+                }
+            }
+        }
+        else if(clipboardData.types[i] == "text/plain") {
+            var file_regexp = /file:\/\/.*/;
+            var regexp = new RegExp(file_regexp);
+            if(data.match(regexp)) {
+                alert('Your browser does not support pasting images from disk. Please use the upload form.');
+            }
+            
+        }
+    }
+}
+
+function processClipboardItems(clipboardData, editElement, event) {
+    for (var file = 0; file<clipboardData.items.length; file++)
+    {
+        if (clipboardData.items[file].type.indexOf('image/') != -1)
+        {
+            /* Get file name and type details */
+            var ext = '';
+            switch (clipboardData.items[file].type)
+            {
+            case 'image/gif':
+                ext = '.gif';
+                break;
+            case 'image/jpeg':
+            case 'image/jpg':
+            case 'image/pjpeg':
+                ext = '.jpg';
+                break;
+            case 'image/png':
+                ext = '.png';
+                break;
+            case 'image/svg+xml':
+            case 'image/svg':
+                ext = '.svg';
+                break;
+            case 'image/tiff':
+            case 'image/tif':
+                ext = '.tiff';
+                break;
+            case 'image/bmp': 
+            case'image/x-bmp':
+            case 'image/x-ms-bmp':
+                ext = '.bmp';
+                break;
+            }
+            var fileinput = $('.file_selector').get(0);
+            var timestamp = Math.round(+new Date()/1000);
+            var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+ext;
+
+            /* Upload pasted image */
+            var blob = clipboardData.items[file].getAsFile();
+            blob.name = name; /* Not very elegent, but we pretent the Blob is actually a File */
+            uploadAndAttachFiles([blob], fileinput);
+
+            /* Inset text into input */
+            pasteImageName(editElement, name);
+
+            event.preventDefault();
+            event.stopPropagation();
+            break;
+        }
+        
+    }
+
+}
 function preparePasteEvents() {
     $('.wiki-edit').each(function(){
             this.addEventListener('drop', function (e) {
@@ -57,55 +156,17 @@ function preparePasteEvents() {
                 }
             });
         });
-
     $('.wiki-edit').bind('paste', function (e) {
         var clipboardData;
         if (document.attachEvent) clipboardData = window.clipboardData;
         else clipboardData = e.clipboardData;
-        for (var file = 0; file<clipboardData.items.length; file++)
-        {
-            if (clipboardData.items[file].type.indexOf('image/') != -1)
-            {
-                /* Get file name and type details */
-                var ext = '';
-                switch (clipboardData.items[file].type)
-                {
-                    case 'image/gif':
-                        ext = '.gif';
-                        break;
-                    case 'image/jpeg', 'image/jpg', 'image/pjpeg':
-                        ext = '.jpg';
-                        break;
-                    case 'image/png':
-                        ext = '.png';
-                        break;
-                    case 'image/svg+xml', 'image/svg':
-                        ext = '.svg';
-                        break;
-                    case 'image/tiff', 'image/tif':
-                        ext = '.tiff';
-                        break;
-                    case 'image/bmp', 'image/x-bmp', 'image/x-ms-bmp':
-                        ext = '.bmp';
-                        break;
-                }
-                var fileinput = $('.file_selector').get(0);
-                var timestamp = Math.round(+new Date()/1000);
-                var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+ext;
-
-                /* Upload pasted image */
-                var blob = clipboardData.items[file].getAsFile();
-                blob.name = name; /* Not very elegent, but we pretent the Blob is actually a File */
-                uploadAndAttachFiles([blob], fileinput);
-
-                /* Inset text into input */
-                pasteImageName(this, name);
-
-                e.preventDefault();
-                e.stopPropagation();
-                break;
-            }
+        if(!clipboardData.items) {
+            getDataItems(clipboardData, this);
         }
+        else {
+            processClipboardItems(clipboardData, this,e);
+        }
+
     });
 
     uploadBlob = function (blob, uploadUrl, attachmentId, options) {
