@@ -1,5 +1,6 @@
 require 'redmine'
 require 'issue_hooks'
+require 'email_hooks'
 
 Redmine::Plugin.register :redmine_image_clipboard_paste do
   name 'Image Clipboard Paste'
@@ -8,3 +9,5 @@ Redmine::Plugin.register :redmine_image_clipboard_paste do
   version '1.0.0'
   requires_redmine :version_or_higher => '2.3.0'
 end
+
+ActionMailer::Base.register_interceptor(InlineImagesEmailInterceptor)
