@@ -39,3 +39,4 @@ class InlineImagesEmailInterceptor
     end
   end
 end
+

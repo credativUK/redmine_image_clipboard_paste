@@ -11,3 +11,4 @@ Redmine::Plugin.register :redmine_image_clipboard_paste do
 end
 
 ActionMailer::Base.register_interceptor(InlineImagesEmailInterceptor)
+
