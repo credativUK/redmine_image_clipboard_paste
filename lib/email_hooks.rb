@@ -22,8 +22,9 @@ class InlineImagesEmailInterceptor
             attachment_object = Attachment.where(:filename => File.basename(image_url)).first
             if attachment_object
               # Use CIDs
-              message.attachments.inline[attachment_object.filename] = File.read(attachment_object.diskfile)
-              attachment_url = message.attachments[attachment_object.filename].url
+              image_name = "inline_image." << attachment_object.filename
+              message.attachments.inline[image_name] = File.read(attachment_object.diskfile)
+              attachment_url = message.attachments[image_name].url
 
               # Alternatively use Base64
               # attachment_url = "data:#{Redmine::MimeType.of(attachment_object.diskfile)};base64,#{Base64.encode64(open(attachment_object.diskfile) { |io| io.read })}"
