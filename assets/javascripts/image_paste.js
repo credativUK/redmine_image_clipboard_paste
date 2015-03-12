@@ -1,7 +1,12 @@
 jQuery.event.props.push('clipboardData');
 
 function pasteImageName(e, name) {
-    var text = '![](' + name + ') ';
+    var text = null;
+    jsToolBar.prototype.elements.img.fn.wiki.call({
+        encloseSelection: function(prefix, suffix, fn) {
+            text = prefix + name + suffix;
+        }
+    })
     var scrollPos = e.scrollTop;
     var method = ((e.selectionStart || e.selectionStart == '0') ? 1 : (document.selection ? 2 : false ) );
     if (method == 2) { 
