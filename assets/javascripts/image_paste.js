@@ -142,21 +142,6 @@ function processClipboardItems(clipboardData, editElement, event) {
     }
 }
 
-function preparePasteEvents() {
-    $('.wiki-edit').bind('paste', function (e) {
-        var clipboardData;
-        if (document.attachEvent) clipboardData = window.clipboardData;
-        else clipboardData = e.clipboardData;
-        if(!clipboardData.items) {
-            getDataItems(clipboardData, this);
-        }
-        else {
-            processClipboardItems(clipboardData, this,e);
-        }
-
-    });
-}
-
 $( document ).ready(function() {
     $('.wiki-edit').each(function(){
         this.addEventListener('drop', function (e) {
@@ -273,13 +258,11 @@ $( document ).ready(function() {
 
                 var options = {
                     before: function() {
-//                        self.setLoadingStateForTextarea();
                     },
                     success: function(html) {
                         self.insertHtmlForTextarea(html);
                     },
                     error: function() {
-//                        self.clearLoadingStateForTextarea();
                     }
                 };
 
