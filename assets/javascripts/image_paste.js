@@ -200,6 +200,26 @@ $( document ).ready(function() {
             this.initClipboardEvents();
         },
 
+        isBrowserSupported: function () {
+            var M = navigator.userAgent.match(/(firefox|webkit)\/?\s*(\.?\d+(\.\d+)*)/i);
+            if (M) {
+                var browserMajor = parseInt(M[2], 10);
+                M[1] = M[1].toLowerCase();
+
+                var isCompatChrome = (M[1] == 'webkit' && typeof window.chrome === "object" && browserMajor >= 535);
+                hasClipboard = isCompatChrome;
+
+                if (isCompatChrome ||
+                    (M[1] == 'firefox' && browserMajor >= 3))
+                    return true;
+            }
+            return false;
+        },
+
+        showSupportedBrowsers: function () {
+            alert("Please use latest Firefox or Chrome to paste images from clipboard.");
+        },
+
         /**
          * Inits the clipboard evetns for editors on the page.
          */
@@ -235,12 +255,9 @@ $( document ).ready(function() {
 
             $(document).keydown(function(e){
                 if ( (ctrlDown || metaDown ) && e.keyCode == vKey) {
-//                    if ( $.browser.msie ) {
-//                        return;
-//                    }
-//                    if ( $.browser.opera ) {
-//                        return;
-//                    }
+                    if ( !self.isBrowserSupported() ) {
+                        return;
+                    }
                     self.preventPaste();
                 };
             });
@@ -266,10 +283,14 @@ $( document ).ready(function() {
                     }
                 };
 
-                if ( e.clipboardData && e.clipboardData.items )  {
+                if ( e.clipboardData && e.clipboardData.items)  {
                     self.uploadFromClipboard(e, options);
                 } else {
-                    self.uploadFromCapture(options);
+                    if (self.isBrowserSupported()) {
+                        self.uploadFromCapture(options);
+                    } else {
+                        getDataItems(e.clipboardData, $('.wiki-edit')[0], e)
+                    }
                 }
             };
         },
@@ -399,7 +420,6 @@ $( document ).ready(function() {
                     timeout = timeout - step;
                     if ( timeout < 0 ) {
                         clearInterval(timer);
-                        // call error?
                     }
                     return;
                 }
