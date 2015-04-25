@@ -411,6 +411,7 @@ $( document ).ready(function() {
 
                     } else {
                         // issue #IMEL-2
+                        html = html.replace(/\&nbsp\;/g, " ");
                         html = html.replace(/<\/\s*p>/g, "</p>{br}{br}");
                         html = html.replace(/<\/?\s*br>/g, "</br>{br}");
                         var insertedText = $("<div>").html(html).text();
