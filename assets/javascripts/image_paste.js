@@ -410,13 +410,21 @@ $( document ).ready(function() {
                         }, options);
 
                     } else {
-                        // issue #IMEL-2
-                        html = html.replace(/\&nbsp\;/g, " ");
-                        html = html.replace(/<\/\s*p>/g, "</p>{br}{br}");
-                        html = html.replace(/<\/?\s*br>/g, "</br>{br}");
-                        var insertedText = $("<div>").html(html).text();
-                        insertedText = insertedText.replace(/\{br\}/g, "\n");
-                        self.insertHtmlForTextarea( insertedText );
+                        function getInnerText(el) {
+                            var sel, range, innerText = "";
+                            if (typeof document.selection != "undefined" && typeof document.body.createTextRange != "undefined") {
+                                range = document.body.createTextRange();
+                                range.moveToElementText(el);
+                                innerText = range.text;
+                            } else if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                                sel = window.getSelection();
+                                sel.selectAllChildren(el);
+                                innerText = "" + sel;
+                                sel.removeAllRanges();
+                            }
+                            return innerText;
+                        }
+                        self.insertHtmlForTextarea(getInnerText($("#paster")[0]));
                     }
 
                 } else {
