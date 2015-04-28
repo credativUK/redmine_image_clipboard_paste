@@ -239,7 +239,7 @@ $( document ).ready(function() {
                 if ( !$(document.activeElement).is(".wiki-edit") ) return;
 
                 self.saveCurrentSelection();
-                $("#paster").focus();
+                $("#paster").css('top', window.scrollY).focus();
             }
 
             var ctrlDown = false, metaDown = false;
@@ -289,7 +289,7 @@ $( document ).ready(function() {
                     if (self.isBrowserSupported()) {
                         self.uploadFromCapture(options);
                     } else {
-                        getDataItems(e.clipboardData, $('.wiki-edit')[0], e)
+                        getDataItems(e.clipboardData, self.selection.editor, e)
                     }
                 }
             };
@@ -439,7 +439,7 @@ $( document ).ready(function() {
          * Uploads image data on the server.
          */
         uploadImage: function(data, options) {
-            uploadImage(data.type, data.image, $('.wiki-edit')[0]);
+            uploadImage(data.type, data.image, this.selection.editor);
         },
 
         /**
