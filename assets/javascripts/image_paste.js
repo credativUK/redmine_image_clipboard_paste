@@ -239,7 +239,7 @@ $( document ).ready(function() {
                 if ( !$(document.activeElement).is(".wiki-edit") ) return;
 
                 self.saveCurrentSelection();
-                $("#paster").css('top', window.scrollY).focus();
+                $("#paster").css('top', window.scrollY + 20).focus();
             }
 
             var vKey = 86;
