@@ -231,7 +231,7 @@ $( document ).ready(function() {
             // fake editable content
             this.createPasteCapture();
 
-            // focuses on the fake editable content when ctrl+v is presed
+            // focuses on the fake editable content when ctrl+v is pressed
             this.preventPaste = function() {
                 if (!document.activeElement) return;
 
