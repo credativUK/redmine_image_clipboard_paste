@@ -7,38 +7,7 @@ function pasteImageName(e, name) {
             text = prefix + name + suffix;
         }
     })
-    var scrollPos = e.scrollTop;
-    var method = ((e.selectionStart || e.selectionStart == '0') ? 1 : (document.selection ? 2 : false ) );
-    if (method == 2) {
-        e.focus();
-        var range = document.selection.createRange();
-        range.moveStart ('character', -e.value.length);
-        strPos = range.text.length;
-    }
-    else if (method == 1) strPos = e.selectionStart;
-
-    var front = (e.value).substring(0,strPos);
-    var back = (e.value).substring(strPos,e.value.length);
-    if (front.length == 0 || front.slice(-1) == '\n') {
-        e.value=front+text+back;
-    } else {
-        e.value=front+' '+text+back;
-    }
-    strPos = strPos + text.length;
-    if (method == 2) {
-        e.focus();
-        var range = document.selection.createRange();
-        range.moveStart ('character', -e.value.length);
-        range.moveStart ('character', strPos);
-        range.moveEnd ('character', 0);
-        range.select();
-    }
-    else if (method == 1) {
-        e.selectionStart = strPos;
-        e.selectionEnd = strPos;
-        e.focus();
-    }
-    e.scrollTop = scrollPos;
+    window.imgpaste.context.insertHtmlForTextarea(text);
 }
 
 /**
@@ -121,7 +90,12 @@ function uploadImage(type, blob, editElement) {
     var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+ext;
 
     /* Upload pasted image */
-    blob.name = name; /* Not very elegent, but we pretent the Blob is actually a File */
+    if (Object.defineProperty) {
+        Object.defineProperty(blob, 'name', { value: name });
+    } else {
+        blob.name = name;
+    }
+    blob = $.extend(blob, {name: name});
     uploadAndAttachFiles([blob], fileinput);
 
     /* Inset text into input */
@@ -152,7 +126,12 @@ $( document ).ready(function() {
                     var timestamp = Math.round(+new Date()/1000);
                     var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name.replace(/[ !"#%&\'()*:<=>?\[\\\]|]/g, '_');
                     var blob = e.dataTransfer.files[file].slice();
-                    blob.name = name;
+                    if (Object.defineProperty) {
+                        Object.defineProperty(blob, 'name', { value: name });
+                    } else {
+                        blob.name = name;
+                    }
+
                     uploadAndAttachFiles([blob], $('input:file.file_selector'));
                     pasteImageName(this, name);
 
@@ -298,50 +277,35 @@ $( document ).ready(function() {
 
             // if the image is inserted into the textarea, then return focus
             self.returnFocusForTextArea();
+            var items = $.makeArray(e.clipboardData.items).concat($.makeArray(e.clipboardData.files));
 
-            // read data from the clipborad and upload the first file
+            // read data from the clipboard and upload the first file
+            for (var i = 0; i < items.length; ++i) {
+                if ((!items[i].kind || items[i].kind === 'file') && items[i].type.indexOf('image/') !== -1) {
 
-            if ( e.clipboardData.items ) {
-                var items = e.clipboardData.items;
-                for (var i = 0; i < items.length; ++i) {
-                    if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) {
+                    if ( options.before ) options.before();
 
-                        if ( options.before ) options.before();
+                    // only paste 1 image at a time
+                    e.preventDefault();
 
-                        // only paste 1 image at a time
-                        e.preventDefault();
+                    // uploads image on a server
+                    this.uploadImage({
+                        image: items[i].getAsFile ? items[i].getAsFile() : items[i],
+                        type: items[i].type,
+                        ref: 'clipboard'
+                    }, options);
 
-                        // uploads image on a server
-                        this.uploadImage({
-                            image: items[i].getAsFile(),
-                            type: items[i].type,
-                            ref: 'clipboard'
-                        }, options);
-
-                        return;
-                    }
+                    return;
                 }
             }
+            var items = e.clipboardData.items;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].kind === 'string' && items[i].type === 'text/plain') {
+                    items[i].getAsString($.proxy(this.insertHtmlForTextarea, this));
 
-            if ( e.clipboardData.files ) {
-                var items = e.clipboardData.files;
-                for (var i = 0; i < items.length; ++i) {
-                    if (items[i].type.indexOf('image/') !== -1) {
+                    e.preventDefault();
 
-                        if ( options.before ) options.before();
-
-                        // only paste 1 image at a time
-                        e.preventDefault();
-
-                        // uploads image on a server
-                        this.uploadImage({
-                            image: items[i],
-                            type: items[i].type,
-                            ref: 'clipboard'
-                        }, options);
-
-                        return;
-                    }
+                    return;
                 }
             }
         },
@@ -371,7 +335,7 @@ $( document ).ready(function() {
         },
 
 
-    /**
+        /**
          * Uploads image by using the capture.
          */
         uploadFromCapture: function(options) {
@@ -481,10 +445,20 @@ $( document ).ready(function() {
                 + html
                 + this.selection.editor.value.slice(this.selection.end);
 
-            $(this.selection.editor).focus();
-            this.selection.editor.selectionStart =  this.selection.end + html.length;
-            this.selection.editor.selectionEnd = this.selection.editor.selectionStart;
+            // $(this.selection.editor).focus();
 
+            var elem = this.selection.editor;
+            var caretPos = this.selection.start + html.length;
+            if (elem.createTextRange) {
+                var range = elem.createTextRange();
+                range.move('character', caretPos);
+                range.select();
+            } else if(elem.selectionStart) {
+                elem.focus();
+                elem.setSelectionRange(caretPos, caretPos);
+            } else {
+                elem.focus();
+            }
             this.selection = null;
         },
 
