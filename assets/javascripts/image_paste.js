@@ -1,149 +1,10 @@
 jQuery.event.props.push('clipboardData');
+jQuery.event.props.push('dataTransfer');
+(function ($) {
+    var imgpaste = {};
 
-function pasteImageName(e, name) {
-    var text = null;
-    jsToolBar.prototype.elements.img.fn.wiki.call({
-        encloseSelection: function(prefix, suffix, fn) {
-            text = prefix + name + suffix;
-        }
-    })
-    window.imgpaste.context.insertHtmlForTextarea(text);
-}
-
-/**
-* Some browser doesn't support cliboardData.items, so this function recreates a simpler version of it
-* by getting the blob linked to the image.
-* Currently only works when copying an image from a webpage
-*/
-function getDataItems(clipboardData, editElement, event) {
-    clipboardData.items = [];
-    for(var i = 0; i < clipboardData.types.length; i++) {
-        console.log(clipboardData.types[i]);
-        var data = clipboardData.getData(clipboardData.types[i]);
-        if(clipboardData.types[i] == "text/html") {
-            var nodes = $(data);
-            for(var j = 0; j < nodes.length; j++) {
-                var item = {};
-                var node = nodes[j];
-                if(node.tagName == 'IMG') {
-                    var xhr = new XMLHttpRequest();
-                    xhr.addEventListener('load', function(){
-                        if (xhr.status == 200){
-                            //Do something with xhr.response (not responseText), which should be a Blob
-                            item.getAsFile = function() {
-                                return xhr.response;
-                            }
-                            item.type = xhr.response.type;
-                            clipboardData.items.push(item);
-                            processClipboardItems(clipboardData, editElement, event);
-                        }
-                    });
-                    xhr.open('GET', node.src);
-                    xhr.responseType = 'blob';
-                    xhr.send(null);
-                }
-            }
-        }
-        else if(clipboardData.types[i] == "text/plain") {
-            var file_regexp = /file:\/\/.*/;
-            var regexp = new RegExp(file_regexp);
-            if(data.match(regexp)) {
-                alert('Your browser does not support pasting images from disk. Please use the upload form.');
-            }
-
-        }
-    }
-}
-
-function uploadImage(type, blob, editElement) {
-    /* Get file name and type details */
-    var ext = '';
-    switch (type)
-    {
-        case 'image/gif':
-            ext = '.gif';
-            break;
-        case 'image/jpeg':
-        case 'image/jpg':
-        case 'image/pjpeg':
-            ext = '.jpg';
-            break;
-        case 'image/png':
-            ext = '.png';
-            break;
-        case 'image/svg+xml':
-        case 'image/svg':
-            ext = '.svg';
-            break;
-        case 'image/tiff':
-        case 'image/tif':
-            ext = '.tiff';
-            break;
-        case 'image/bmp':
-        case'image/x-bmp':
-        case 'image/x-ms-bmp':
-            ext = '.bmp';
-            break;
-    }
-    var fileinput = $('.file_selector').get(0);
-    var timestamp = Math.round(+new Date()/1000);
-    var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+ext;
-
-    /* Upload pasted image */
-    if (Object.defineProperty) {
-        Object.defineProperty(blob, 'name', { value: name });
-    } else {
-        blob.name = name;
-    }
-    blob = $.extend(blob, {name: name});
-    uploadAndAttachFiles([blob], fileinput);
-
-    /* Inset text into input */
-    pasteImageName(editElement, name);
-}
-
-function processClipboardItems(clipboardData, editElement, event) {
-    for (var file = 0; file<clipboardData.items.length; file++)
-    {
-        if (clipboardData.items[file].type.indexOf('image/') != -1)
-        {
-            uploadImage(clipboardData.items[file].type, clipboardData.items[file].getAsFile(), editElement);
-            event.preventDefault();
-            event.stopPropagation();
-            break;
-        }
-
-    }
-}
-
-$( document ).ready(function() {
-    $('.wiki-edit').each(function(){
-        this.addEventListener('drop', function (e) {
-            for (var file = 0; file<e.dataTransfer.files.length; file++)
-            {
-                if (e.dataTransfer.files[file].type.indexOf('image/') != -1)
-                {
-                    var timestamp = Math.round(+new Date()/1000);
-                    var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+'_'+e.dataTransfer.files[file].name.replace(/[ !"#%&\'()*:<=>?\[\\\]|]/g, '_');
-                    var blob = e.dataTransfer.files[file].slice();
-                    if (Object.defineProperty) {
-                        Object.defineProperty(blob, 'name', { value: name });
-                    } else {
-                        blob.name = name;
-                    }
-
-                    uploadAndAttachFiles([blob], $('input:file.file_selector'));
-                    pasteImageName(this, name);
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                    break;
-                }
-            }
-        });
-    });
-
-    uploadBlob = function (blob, uploadUrl, attachmentId, options) {
+    // Override attachments.js uploadBlob
+    window.uploadBlob = function (blob, uploadUrl, attachmentId, options) {
         var actualOptions = $.extend({
             loadstartEventHandler: $.noop,
             progressEventHandler: $.noop
@@ -152,13 +13,16 @@ $( document ).ready(function() {
         uploadUrl = uploadUrl + '?attachment_id=' + attachmentId;
         if (blob instanceof window.File || blob.name) {
             uploadUrl += '&filename=' + encodeURIComponent(blob.name);
+            uploadUrl += '&content_type=' + encodeURIComponent(blob.type);
         }
 
         return $.ajax(uploadUrl, {
             type: 'POST',
             contentType: 'application/octet-stream',
-            beforeSend: function(jqXhr) {
+            beforeSend: function(jqXhr, settings) {
                 jqXhr.setRequestHeader('Accept', 'application/js');
+                // attach proper File object
+                settings.data = blob;
             },
             xhr: function() {
                 var xhr = $.ajaxSettings.xhr();
@@ -172,24 +36,56 @@ $( document ).ready(function() {
         });
     }
 
-    if ( !window.imgpaste ) window.imgpaste = {};
+    function getExtension(type) {
+        /* Get file name and type details */
+        var ext = '';
+        switch (type)
+        {
+            case 'image/gif':
+                ext = '.gif';
+                break;
+            case 'image/jpeg':
+            case 'image/jpg':
+            case 'image/pjpeg':
+                ext = '.jpg';
+                break;
+            case 'image/png':
+                ext = '.png';
+                break;
+            case 'image/svg+xml':
+            case 'image/svg':
+                ext = '.svg';
+                break;
+            case 'image/tiff':
+            case 'image/tif':
+                ext = '.tiff';
+                break;
+            case 'image/bmp':
+            case 'image/x-bmp':
+            case 'image/x-ms-bmp':
+                ext = '.bmp';
+                break;
+        }
+        return ext;
+    }
 
-    window.imgpaste.context = {
+    imgpaste.context = {
         init: function () {
             this.initClipboardEvents();
         },
 
         isBrowserSupported: function () {
-            var M = navigator.userAgent.match(/(firefox|webkit)\/?\s*(\.?\d+(\.\d+)*)/i);
+            var M = navigator.userAgent.match(/(firefox|webkit|trident)\/?\s*(\.?\d+(\.\d+)*)/i);
             if (M) {
                 var browserMajor = parseInt(M[2], 10);
                 M[1] = M[1].toLowerCase();
 
-                var isCompatChrome = (M[1] == 'webkit' && typeof window.chrome === "object" && browserMajor >= 535);
+                var isCompatChrome = (M[1] === 'webkit' && typeof window.chrome === "object" && browserMajor >= 535);
                 hasClipboard = isCompatChrome;
 
                 if (isCompatChrome ||
-                    (M[1] == 'firefox' && browserMajor >= 3))
+                    (M[1] === 'firefox' && browserMajor >= 3) ||
+                    (M[1] === 'trident' && browserMajor >= 7))
                     return true;
             }
             return false;
@@ -218,7 +114,7 @@ $( document ).ready(function() {
                 if ( !$(document.activeElement).is(".wiki-edit") ) return;
 
                 self.saveCurrentSelection();
-                $("#paster").css('top', window.scrollY + 20).focus();
+                $("#paster").css('top', window.pageYOffset + 20).focus();
             }
 
             var vKey = 86;
@@ -233,44 +129,129 @@ $( document ).ready(function() {
             });
 
             // catchs the "paste" event to upload image on a server
-
-            document.onpaste = function (e) {
-
-                if (!document.activeElement) return;
-
+            $(document).on('paste', '.wiki-edit, #paster', function (e) {
                 // we can insert images only into wp editor or editable content
-                if (
-                    !$(document.activeElement).is(".wiki-edit") &&
-                    !$(document.activeElement).attr('contenteditable') ) return;
-
-                var options = {
-                    before: function() {
-                    },
-                    success: function(html) {
-                        self.insertHtmlForTextarea(html);
-                    },
-                    error: function() {
-                    }
-                };
-
-                if ( e.clipboardData && e.clipboardData.items)  {
-                    self.uploadFromClipboard(e, options);
-                } else {
-                    if (self.isBrowserSupported()) {
-                        self.uploadFromCapture(options);
-                    } else {
-                        getDataItems(e.clipboardData, self.selection.editor, e)
-                    }
+                if (!document.activeElement ||
+                    (!$(document.activeElement).is('.wiki-edit') &&
+                    !$(document.activeElement).attr('contenteditable')))
+                {
+                    return;
                 }
-            };
+
+                if (!self.selection) { self.saveCurrentSelection(); }
+                if ( e.clipboardData && e.clipboardData.items)  {
+                    self.uploadFromClipboard(e);
+                } else if (self.isBrowserSupported()) {
+                    self.uploadFromCapture();
+                } else if (e.clipboardData) {
+                    self.getDataItems(e.clipboardData, self.selection.editor, e)
+                }
+            });
+
+            $('.wiki-edit').on('drop', function(e) {
+                self.saveCurrentSelection();
+                var files = e.dataTransfer.files;
+
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+
+                    if (file.type.indexOf('image/') < 0) { continue }
+
+                    var blob = file.slice();
+                    self.uploadImage(file.type, blob, this, file.name.replace(/[ !"#%&\'()*:<=>?\[\\\]|]/g, '_'));
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    break;
+                }
+            });
         },
 
         // --------------------------------------------------------------------------
         // Methods for uploading
         // --------------------------------------------------------------------------
 
+        uploadImage: function(type, blob, editElement, filename) {
+            var ext = (typeof filename === 'undefined') ? getExtension(type) : ('_' + filename);
+            var fileinput = $('.file_selector').get(0);
+            var timestamp = Math.round(+new Date()/1000);
+            var name = 'screenshot_'+addFile.nextAttachmentId+'_'+timestamp+ext;
+
+            /* Upload pasted image */
+            if (Object.defineProperty) {
+                Object.defineProperty(blob, 'name', { value: name });
+            } else {
+                blob.name = name;
+            }
+            uploadAndAttachFiles([blob], fileinput);
+
+            /* Inset text into input */
+            this.pasteImageName(editElement, name);
+        },
+
+        processClipboardItems: function(clipboardData, editElement, event) {
+            for (var i = 0; i<clipboardData.items.length; i++)
+            {
+                var file = clipboardData.items[i];
+                if (file.type.indexOf('image/') != -1)
+                {
+                    this.uploadImage(file.type, file.getAsFile(), editElement);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    break;
+                }
+
+            }
+        },
+
         /**
-         * Uploads image by using Clipbord API.
+        * Some browser doesn't support cliboardData.items, so this function recreates a simpler version of it
+        * by getting the blob linked to the image.
+        * Currently only works when copying an image from a webpage
+        */
+        getDataItems: function(clipboardData, editElement, event) {
+            if (!clipboardData.types) return;
+            var self = this;
+
+            clipboardData.items = [];
+            for (var i = 0; i < clipboardData.types.length; i++) {
+                console.log(clipboardData.types[i]);
+                var data = clipboardData.getData(clipboardData.types[i]);
+                if (clipboardData.types[i] == "text/html") {
+                    var nodes = $(data);
+                    $(data).each(function(j, node) {
+                        var item = {};
+                        if (node.tagName !== 'IMG') return;
+
+                        var xhr = new XMLHttpRequest();
+                        xhr.addEventListener('load', function(){
+                            if (xhr.status !== 200) return;
+
+                            //Do something with xhr.response (not responseText), which should be a Blob
+                            item.getAsFile = function() {
+                                return xhr.response;
+                            }
+                            item.type = xhr.response.type;
+                            clipboardData.items.push(item);
+                            self.processClipboardItems(clipboardData, editElement, event);
+                        });
+                        xhr.open('GET', node.src);
+                        xhr.responseType = 'blob';
+                        xhr.send(null);
+                    });
+                }
+                else if (clipboardData.types[i] == "text/plain") {
+                    var file_regexp = /file:\/\/.*/;
+                    var regexp = new RegExp(file_regexp);
+                    if (data.match(regexp)) {
+                        alert('Your browser does not support pasting images from disk. Please use the upload form.');
+                    }
+                }
+            }
+        },
+
+        /**
+         * Uploads image by using Clipboard API. (firefox | opera | chrome)
          */
         uploadFromClipboard: function(e, options) {
             var self = this;
@@ -283,18 +264,12 @@ $( document ).ready(function() {
             for (var i = 0; i < items.length; ++i) {
                 if ((!items[i].kind || items[i].kind === 'file') && items[i].type.indexOf('image/') !== -1) {
 
-                    if ( options.before ) options.before();
-
                     // only paste 1 image at a time
                     e.preventDefault();
 
                     // uploads image on a server
-                    this.uploadImage({
-                        image: items[i].getAsFile ? items[i].getAsFile() : items[i],
-                        type: items[i].type,
-                        ref: 'clipboard'
-                    }, options);
-
+                    var image = items[i].getAsFile ? items[i].getAsFile() : items[i];
+                    this.uploadImage(items[i].type, image, this.selection.editor);
                     return;
                 }
             }
@@ -336,12 +311,10 @@ $( document ).ready(function() {
 
 
         /**
-         * Uploads image by using the capture.
+         * Uploads image by using the capture. (IE)
          */
         uploadFromCapture: function(options) {
             var self = this;
-
-            if ( options.before ) options.before();
 
             var timeout = 5000, step = 100;
             $("#paster").html("");
@@ -358,11 +331,7 @@ $( document ).ready(function() {
                         var src = $("#paster img").attr('src');
                         var type = src.substring(src.indexOf(":") + 1, src.indexOf(";"))
                         var base64str = src.substr(src.indexOf(",") + 1);
-                        self.uploadImage({
-                            image: self.b64toBlob(base64str, type),
-                            type: type,
-                            ref: 'dragdrop'
-                        }, options);
+                        self.uploadImage(type, self.b64toBlob(base64str, type), self.selection.editor);
 
                     } else {
                         function getInnerText(el) {
@@ -399,28 +368,24 @@ $( document ).ready(function() {
         },
 
         /**
-         * Uploads image data on the server.
-         */
-        uploadImage: function(data, options) {
-            uploadImage(data.type, data.image, this.selection.editor);
-        },
-
-        /**
          * Creates the capture.
          */
         createPasteCapture: function() {
-            this.paster = $("<div id='paster'></div>").attr({
-                "contenteditable": "true",
-                "_moz_resizing": "false"
-            }).css({
-                "position": "absolute",
-                "height": "1",
-                "width": "1",
-                "opacity": "0",
-                "outline": "0",
-                "overflow": "auto",
-                "z-index": "-9999"})
-                .prependTo("body");
+            this.paster = $('<div id="paster"></div>')
+                .attr({
+                    'contenteditable': 'true',
+                    '_moz_resizing': 'false'
+                })
+                .css({
+                    'position': 'absolute',
+                    'height': '1',
+                    'width': '1',
+                    'opacity': '0',
+                    'outline': '0',
+                    'overflow': 'auto',
+                    'z-index': '-9999'
+                })
+                .prependTo('body');
         },
 
         // --------------------------------------------------------------------------
@@ -453,13 +418,23 @@ $( document ).ready(function() {
                 var range = elem.createTextRange();
                 range.move('character', caretPos);
                 range.select();
-            } else if(elem.selectionStart) {
+            } else if(elem.selectionStart || el.selectionStart === 0) {
                 elem.focus();
                 elem.setSelectionRange(caretPos, caretPos);
             } else {
                 elem.focus();
             }
             this.selection = null;
+        },
+
+        pasteImageName: function(e, name) {
+            var text = null;
+            jsToolBar.prototype.elements.img.fn.wiki.call({
+                encloseSelection: function(prefix, suffix, fn) {
+                    text = prefix + name + suffix;
+                }
+            })
+            this.insertHtmlForTextarea(text);
         },
 
         /**
@@ -497,8 +472,7 @@ $( document ).ready(function() {
         }
     };
 
-    $(function(){
-        window.imgpaste.context.init();
+    $(function() {
+        imgpaste.context.init();
     });
-});
-
+})(jQuery);
