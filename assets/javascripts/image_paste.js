@@ -418,7 +418,7 @@ jQuery.event.props.push('dataTransfer');
                 var range = elem.createTextRange();
                 range.move('character', caretPos);
                 range.select();
-            } else if(elem.selectionStart || el.selectionStart === 0) {
+            } else if(elem.selectionStart || elem.selectionStart === 0) {
                 elem.focus();
                 elem.setSelectionRange(caretPos, caretPos);
             } else {
