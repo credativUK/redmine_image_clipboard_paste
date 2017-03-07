@@ -120,7 +120,7 @@ jQuery.event.props.push('dataTransfer');
             var vKey = 86;
 
             $(document).keydown(function(e){
-                if ( (e.ctrlKey || e.metaKey) && e.keyCode == vKey ) {
+                if ( (e.ctrlKey || e.metaKey) && !e.altKey && e.keyCode == vKey ) {
                     if ( !self.isBrowserSupported() ) {
                         return;
                     }
