@@ -1,6 +1,6 @@
 # Redmine Image Clipboard Paste
 
-Plugin for redmine which allows pasting image data from the clipboard directly into the comments input field on a new ticket or comment. The image will be given an arbitrary filename and added as an attachment and also inserted into the comment text using Redmine's markup language.
+Plugin for redmine which allows pasting image data from the clipboard directly into the comments input field on a new ticket or comment. The image will be given an arbitrary filename and added as an attachment and also inserted into the comment text using Redmine's markup language (textile or markdown).
 
 ## Features
 
