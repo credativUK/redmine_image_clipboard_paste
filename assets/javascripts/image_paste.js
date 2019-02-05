@@ -405,6 +405,12 @@ jQuery.event.props.push('dataTransfer');
 
         insertHtmlForTextarea: function(html) {
             if ( !this.selection ) return;
+
+            try {
+              document.execCommand('insertText', false, html.replace(/\r\n/g, "\n"));
+              return;
+            } catch (e) {}
+
             this.selection.editor.value =
                 this.selection.editor.value.slice(0, this.selection.start)
                 + html
