@@ -81,9 +81,10 @@ jQuery.event.props.push('dataTransfer');
                 M[1] = M[1].toLowerCase();
 
                 var isCompatChrome = (M[1] === 'webkit' && typeof window.chrome === "object" && browserMajor >= 535);
-                hasClipboard = isCompatChrome;
+                var isCompatSafari = (M[1] === 'webkit' && typeof window.safari === "object" && browserMajor >= 600);
 
                 if (isCompatChrome ||
+                    isCompatSafari ||
                     (M[1] === 'firefox' && browserMajor >= 3) ||
                     (M[1] === 'trident' && browserMajor >= 7))
                     return true;
