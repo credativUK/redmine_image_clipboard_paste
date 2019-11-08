@@ -163,7 +163,6 @@ jQuery.event.props.push('dataTransfer');
 
                     e.preventDefault();
                     e.stopPropagation();
-                    break;
                 }
             });
         },
