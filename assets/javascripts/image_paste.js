@@ -118,10 +118,11 @@ jQuery.event.props.push('dataTransfer');
                 $("#paster").css('top', window.pageYOffset + 20).focus();
             }
 
-            var vKey = 86;
-
             $(document).keydown(function(e){
-                if ( (e.ctrlKey || e.metaKey) && !e.altKey && e.keyCode == vKey ) {
+                var isCtrlVCombination = (e.ctrlKey || e.metaKey) && !e.altKey && e.keyCode === 86;
+                var isShiftInsertCombination = e.shiftKey && e.keyCode === 45;
+
+                if (isCtrlVCombination || isShiftInsertCombination) {
                     if ( !self.isBrowserSupported() ) {
                         return;
                     }
