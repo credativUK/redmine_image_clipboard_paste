@@ -1,5 +1,5 @@
 require 'redmine'
-require 'image_clipboard_paste/hooks'
+require File.expand_path('lib/image_clipboard_paste/hooks', __dir__)
 
 Redmine::Plugin.register :redmine_image_clipboard_paste do
   name 'Image Clipboard Paste'
