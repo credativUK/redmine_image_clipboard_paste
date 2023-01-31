@@ -1,5 +1,5 @@
-jQuery.event.props.push('clipboardData');
-jQuery.event.props.push('dataTransfer');
+jQuery.event.addProp('clipboardData');
+jQuery.event.addProp('dataTransfer');
 (function ($) {
     var imgpaste = {};
 
