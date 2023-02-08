@@ -35,7 +35,7 @@ Further information about plugin installation can be found at: http://www.redmin
 
 ## Compatibility
 
-The latest version of this plugin is tested with Redmine 3.3.2.
+The latest version of this plugin is tested with Redmine 5.0.4.
 
 Drag and drop should be supported by all modern browsers, tested with Chrome, Firefox and IE.
 
